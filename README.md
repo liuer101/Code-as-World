@@ -64,6 +64,7 @@ pip install -r requirements/inference.txt
 
 hf download MirroS-Lab/Code-as-World-VL-4B --local-dir weights/4b
 hf download MirroS-Lab/Code-as-World-VL-9B --local-dir weights/9b
+hf download Qwen/Qwen3.5-27B --local-dir weights/27b_base
 ```
 
 Clone QuantiPhy and download its validation videos:
@@ -85,6 +86,10 @@ python -m code_as_world.evaluation 4b \
   --video-dir /path/to/QuantiPhy-validation/validation_videos
 
 python -m code_as_world.evaluation 9b \
+  --input-csv /path/to/QuantiPhy/quantiphy_validation.csv \
+  --video-dir /path/to/QuantiPhy-validation/validation_videos
+
+python -m code_as_world.evaluation 27b_base \
   --input-csv /path/to/QuantiPhy/quantiphy_validation.csv \
   --video-dir /path/to/QuantiPhy-validation/validation_videos
 ```

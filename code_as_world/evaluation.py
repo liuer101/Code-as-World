@@ -32,6 +32,7 @@ SYSTEM_PROMPT = (
 MODEL_SETTINGS = {
     "4b": {"gpu_memory_utilization": 0.2, "enable_chunked_prefill": False},
     "9b": {"gpu_memory_utilization": 0.5, "enable_chunked_prefill": True},
+    "27b_base": {"gpu_memory_utilization": 0.9, "enable_chunked_prefill": True},
 }
 
 MAX_PROMPT_LENGTH = 4096

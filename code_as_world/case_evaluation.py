@@ -38,6 +38,7 @@ DEFAULT_OUTPUT_ROOT = released.REPOSITORY_ROOT / "data" / "evaluation"
 MODEL_IDS = {
     "4b": "MirroS-Lab/Code-as-World-VL-4B",
     "9b": "MirroS-Lab/Code-as-World-VL-9B",
+    "27b_base": "Qwen/Qwen3.5-27B",
 }
 PARSER_VERSION = "quantiphy_numeric_unit_v1"
 METRIC_VERSION = "code_as_world.evaluation._mra_v1"

@@ -117,6 +117,10 @@ CUDA_VISIBLE_DEVICES=0 python -m code_as_world.case_evaluation 4b \
   --batch-size 16
 ```
 
+On a CUDA runtime container without `nvcc`, add
+`--gdn-prefill-backend triton`. The selected backend is recorded in `config.json`
+as an intentional environment-specific deviation from the released defaults.
+
 Set `--model-revision <hugging-face-commit>` when the local checkpoint metadata
 does not expose its revision. Use `--limit 2` for a GPU smoke test before the full
 run. An interrupted run can be continued with the same arguments plus `--resume`;

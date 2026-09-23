@@ -910,6 +910,7 @@ def _run_config(args: argparse.Namespace, input_csv_descriptor: dict[str, Any]) 
             "max_prompt_length": released.MAX_PROMPT_LENGTH,
             "batch_size": args.batch_size,
             "max_retries": args.max_retries,
+            "gdn_prefill_backend": args.gdn_prefill_backend,
             "seed": released.SEED,
             **released.SAMPLING_CONFIG,
         },
@@ -938,6 +939,14 @@ def _run_config(args: argparse.Namespace, input_csv_descriptor: dict[str, Any]) 
                 "failed cases are retained instead of aborting the complete run",
                 f"failed inference batches may retry up to {args.max_retries} times",
                 "trace records and sampled-frame artifacts are emitted per case",
+                *(
+                    [
+                        "vLLM GDN prefill backend is explicitly set to "
+                        f"{args.gdn_prefill_backend}"
+                    ]
+                    if args.gdn_prefill_backend
+                    else []
+                ),
             ],
         },
         "sample_selection": {"limit": args.limit},
@@ -1156,7 +1165,11 @@ def evaluate(args: argparse.Namespace) -> dict[str, Any]:
             released.FORMAT_PROMPT.read_text(encoding="utf-8").strip()
         )
         tokenizer, processor = released._load_model_tools(args.model_path)
-        engine = released._build_engine(args.model, args.model_path)
+        engine = released._build_engine(
+            args.model,
+            args.model_path,
+            gdn_prefill_backend=args.gdn_prefill_backend,
+        )
         sampling = SamplingParams(
             **released.SAMPLING_CONFIG,
             seed=released.SEED,
@@ -1498,6 +1511,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--evaluation-run-id")
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--max-retries", type=int, default=1)
+    parser.add_argument(
+        "--gdn-prefill-backend",
+        choices=("flashinfer", "triton"),
+        help=(
+            "Override the vLLM GDN prefill backend. Use triton on CUDA runtime "
+            "containers that do not include nvcc."
+        ),
+    )
     parser.add_argument("--limit", type=int)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--retry-failed", action="store_true")

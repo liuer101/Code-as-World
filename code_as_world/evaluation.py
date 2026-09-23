@@ -432,10 +432,18 @@ def _ensure_vocab_size(model_path: Path) -> None:
         )
 
 
-def _build_engine(model: str, model_path: Path) -> LLM:
+def _build_engine(
+    model: str,
+    model_path: Path,
+    *,
+    gdn_prefill_backend: str | None = None,
+) -> LLM:
     settings = MODEL_SETTINGS[model]
     _ensure_vocab_size(model_path)
     print(f"[eval] loading {model} from {model_path}", flush=True)
+    optional_engine_kwargs = {}
+    if gdn_prefill_backend is not None:
+        optional_engine_kwargs["gdn_prefill_backend"] = gdn_prefill_backend
     return LLM(
         model=str(model_path),
         skip_tokenizer_init=False,
@@ -451,6 +459,7 @@ def _build_engine(model: str, model_path: Path) -> LLM:
         disable_custom_all_reduce=True,
         enable_chunked_prefill=settings["enable_chunked_prefill"],
         mm_processor_cache_gb=0,
+        **optional_engine_kwargs,
     )
 
 

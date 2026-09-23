@@ -46,6 +46,34 @@ SHA256_CHUNK_SIZE = 8 * 1024 * 1024
 UNIT_PATTERN = re.compile(
     r"^\s*([A-Za-z\u00b5\u03bc%\u00b0][A-Za-z0-9\u00b5\u03bc%\u00b0/\u00b7*^_.\-\u00b2\u00b3]*)"
 )
+QUESTION_UNIT_PATTERN = re.compile(
+    r"\bin\s+([A-Za-z\u00b5\u03bc%\u00b0][A-Za-z0-9\u00b5\u03bc%\u00b0/\u00b7*^_.\-\s\u00b2\u00b3]*?)\s*[?.!]?$",
+    flags=re.IGNORECASE,
+)
+UNIT_ALIASES = {
+    "meter": "m",
+    "meters": "m",
+    "metre": "m",
+    "metres": "m",
+    "centimeter": "cm",
+    "centimeters": "cm",
+    "centimetre": "cm",
+    "centimetres": "cm",
+    "millimeter": "mm",
+    "millimeters": "mm",
+    "second": "s",
+    "seconds": "s",
+    "degree": "deg",
+    "degrees": "deg",
+    "meters per second": "m/s",
+    "metres per second": "m/s",
+    "centimeters per second": "cm/s",
+    "centimetres per second": "cm/s",
+    "meters per second squared": "m/s^2",
+    "metres per second squared": "m/s^2",
+    "centimeters per second squared": "cm/s^2",
+    "centimetres per second squared": "cm/s^2",
+}
 
 
 def _utc_now() -> str:
@@ -280,6 +308,14 @@ def _normalise_unit(unit: str | None) -> str | None:
     return unit.casefold().replace(" ", "").replace("μ", "u").replace("µ", "u")
 
 
+def _unit_from_question(question: Any) -> str | None:
+    match = QUESTION_UNIT_PATTERN.search(str(question or "").strip())
+    if match is None:
+        return None
+    raw_unit = re.sub(r"\s+", " ", match.group(1).strip()).casefold()
+    return UNIT_ALIASES.get(raw_unit, raw_unit.replace(" ", ""))
+
+
 def _parse_answer(raw_response: Any) -> dict[str, Any]:
     value = released._parse_prediction(raw_response)
     unit = _extract_unit(raw_response)
@@ -362,14 +398,28 @@ def _decorate_records(
         if seen_qa_ids[qa_id] > 1:
             qa_id = f"{qa_id}_{seen_qa_ids[qa_id]}"
         record["qa_id"] = qa_id
-        record["answer_unit"] = _row_value(
+        explicit_answer_unit = _row_value(
             row,
             output_columns,
             "answer_unit",
             "ground_truth_unit",
             "unit",
             "units",
-        ) or _extract_unit(record.get("answer"))
+        )
+        record["answer_unit"] = (
+            explicit_answer_unit
+            or _extract_unit(record.get("answer"))
+            or _unit_from_question(record.get("question"))
+        )
+        record["answer_unit_source"] = (
+            "dataset_column"
+            if explicit_answer_unit
+            else "answer_text"
+            if _extract_unit(record.get("answer"))
+            else "question_text"
+            if record["answer_unit"]
+            else None
+        )
         record["physical_quantity"] = _row_value(
             row,
             output_columns,
@@ -631,6 +681,7 @@ def _qa_record(record: dict[str, Any]) -> dict[str, Any]:
             "raw": str(record.get("answer") or ""),
             "value": released._parse_prediction(record.get("answer")),
             "unit": record.get("answer_unit"),
+            "unit_source": record.get("answer_unit_source"),
             "source_category": "benchmark_annotation",
         },
         "task_type": record.get("inference_type") or None,
@@ -696,6 +747,7 @@ def _failure_prediction(
             "raw": str(record.get("answer") or ""),
             "value": gold_value,
             "unit": record.get("answer_unit"),
+            "unit_source": record.get("answer_unit_source"),
         },
         "score": {
             "metric": "MRA",

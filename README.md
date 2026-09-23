@@ -110,7 +110,7 @@ attempt under an immutable evaluation run ID:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 python -m code_as_world.case_evaluation 4b \
-  --input-csv /path/to/QuantiPhy/quantiphy_validation.csv \
+  --input-csv /path/to/QuantiPhy-validation/validation_dataset.csv \
   --video-dir /path/to/QuantiPhy-validation/validation_videos \
   --benchmark-repo-path /path/to/QuantiPhy \
   --evaluation-run-id quantiphy_val_4b_baseline_20260923 \

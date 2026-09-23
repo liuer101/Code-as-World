@@ -101,6 +101,48 @@ python /path/to/QuantiPhy/evaluator.py \
   --gt_file /path/to/QuantiPhy/quantiphy_validation.csv
 ```
 
+### Traceable case-level evaluation
+
+For evaluations that will feed the case browser or later error analysis, use the
+traceable entrypoint. It reuses the released prompt, video sampling, vLLM settings,
+answer parser, and MRA implementation, while retaining every case input and model
+attempt under an immutable evaluation run ID:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python -m code_as_world.case_evaluation 4b \
+  --input-csv /path/to/QuantiPhy/quantiphy_validation.csv \
+  --video-dir /path/to/QuantiPhy-validation/validation_videos \
+  --benchmark-repo-path /path/to/QuantiPhy \
+  --evaluation-run-id quantiphy_val_4b_baseline_20260923 \
+  --batch-size 16
+```
+
+Set `--model-revision <hugging-face-commit>` when the local checkpoint metadata
+does not expose its revision. Use `--limit 2` for a GPU smoke test before the full
+run. An interrupted run can be continued with the same arguments plus `--resume`;
+failed cases remain visible and can be retried with `--resume --retry-failed`.
+Use a separate run ID for the limited smoke test: changing the selected sample set,
+checkpoint, code, templates, or inference settings while resuming is rejected.
+
+The run is stored in `data/evaluation/<evaluation_run_id>/`:
+
+```text
+config.json                 locked benchmark, code, model, environment and generation settings
+run.json                    run status and failure reason
+cases.jsonl                 stable video-level Case records
+qa.jsonl                    question, prior, ground truth, unit and category records
+predictions.jsonl           selected per-QA ModelRun records
+attempts.jsonl              every successful or failed generation attempt
+prediction_history.jsonl    superseded failed records, when failed cases are retried
+artifacts.jsonl             checksummed source/frame/preview artifact index
+metrics.json                score, coverage and failure/parse breakdown
+predictions.csv             QuantiPhy-evaluator-compatible predictions
+media/<case_id>/            exact sampled PNG frames, timestamps and a JPEG contact sheet
+```
+
+`data/` remains git-ignored: commit the evaluator code, but keep benchmark media,
+model weights, sampled frames and evaluation outputs on the evaluation server.
+
 ### OpenAI-compatible serving
 
 The checkpoints can also be exposed through the standard vLLM API:
@@ -164,4 +206,3 @@ If you find Code-as-World useful, please cite:
   year    = {2026}
 }
 ```
-
